@@ -1,0 +1,1567 @@
+<title>Young-Su Ko</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@300;400;500;600&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&display=swap">
+
+<style>
+/* ══ tokens ═══════════════════════════════════════════════════
+   Palette is the viridis colormap — the one these experiments are
+   plotted in. Light lives on bare :root; dark is redefined twice
+   (media query + [data-theme]) so OS setting and toggle both win. */
+:root {
+  --ground:      #EDF0EE;
+  --surface:     #F7F9F7;
+  --surface-alt: #E3E8E5;
+  --ink:         #131E1D;
+  --ink-soft:    #3A4A48;
+  --ink-mute:    #6A7A78;
+  --rule:        #CBD4D2;
+  --rule-soft:   #DCE3E0;
+  --accent:      #14776F;
+  --accent-deep: #3B2A63;
+  --accent-soft: #D2E4E1;
+  --spark:       #A98C0C;
+  --liquid:      rgba(20, 119, 111, .07);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --ground:      #07110F;
+    --surface:     #0E1A18;
+    --surface-alt: #16241F;
+    --ink:         #E6EDEA;
+    --ink-soft:    #B2C0BC;
+    --ink-mute:    #798A86;
+    --rule:        #23322D;
+    --rule-soft:   #182722;
+    --accent:      #3FBFAC;
+    --accent-deep: #9B87D8;
+    --accent-soft: #13302B;
+    --spark:       #FDE725;
+    --liquid:      rgba(63, 191, 172, .07);
+  }
+}
+:root[data-theme="dark"] {
+  --ground:      #07110F;
+  --surface:     #0E1A18;
+  --surface-alt: #16241F;
+  --ink:         #E6EDEA;
+  --ink-soft:    #B2C0BC;
+  --ink-mute:    #798A86;
+  --rule:        #23322D;
+  --rule-soft:   #182722;
+  --accent:      #3FBFAC;
+  --accent-deep: #9B87D8;
+  --accent-soft: #13302B;
+  --spark:       #FDE725;
+  --liquid:      rgba(63, 191, 172, .07);
+}
+
+:root {
+  --serif: "Newsreader", "IBM Plex Sans KR", Georgia, serif;
+  --sans:  "IBM Plex Sans KR", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --mono:  "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --rail: 264px;
+  --pad: clamp(20px, 4vw, 60px);
+}
+
+* { box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+
+body {
+  margin: 0;
+  background: var(--ground);
+  color: var(--ink);
+  font-family: var(--sans);
+  font-weight: 400;
+  font-size: 16px;
+  line-height: 1.7;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  word-break: keep-all;      /* 한국어 어절 단위 줄바꿈 */
+  overflow-wrap: break-word;
+}
+
+a { color: inherit; }
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
+/* ══ shell ════════════════════════════════════════════════════ */
+.shell {
+  display: grid;
+  grid-template-columns: var(--rail) minmax(0, 1fr);
+  max-width: 1280px;
+  margin: 0 auto;
+  min-height: 100vh;
+}
+
+/* ── left rail ─────────────────────────────────────────────────
+   The nav hangs off a capillary tube. Its liquid level tracks
+   reading position — a scrollbar shaped like the experiment.  */
+.rail {
+  border-right: 1px solid var(--rule);
+  padding: 44px var(--pad) 44px clamp(20px, 3vw, 44px);
+  position: sticky;
+  top: 0;
+  align-self: start;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  gap: 36px;
+}
+.rail__mark {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  text-decoration: none;
+}
+.rail__name {
+  font-family: var(--serif);
+  font-size: 22px;
+  font-weight: 500;
+  line-height: 1.2;
+  letter-spacing: -.015em;
+}
+.rail__sub {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: .11em;
+  text-transform: uppercase;
+  color: var(--ink-mute);
+  line-height: 1.5;
+}
+
+.gauge { display: grid; grid-template-columns: 3px minmax(0, 1fr); gap: 20px; }
+.gauge__tube {
+  position: relative;
+  background: var(--rule-soft);
+  border-radius: 3px;
+  box-shadow: inset 0 0 0 1px var(--rule);
+}
+.gauge__fill {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 0;
+  background: linear-gradient(180deg, var(--accent-deep), var(--accent));
+  border-radius: 3px 3px 0 0;
+  transition: height .55s cubic-bezier(.2,.7,.3,1);
+}
+@media (prefers-reduced-motion: reduce) { .gauge__fill { transition: none; } }
+.gauge__men {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  width: 9px;
+  height: 9px;
+  margin: 0 0 -4.5px -4.5px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 0 4px var(--accent-soft);
+}
+
+.nav { display: flex; flex-direction: column; gap: 4px; }
+.nav__item {
+  display: block;
+  padding: 6px 0;
+  text-decoration: none;
+  color: var(--ink-mute);
+  font-size: 14.5px;
+  cursor: pointer;
+  transition: color .2s ease, transform .25s cubic-bezier(.2,.7,.3,1);
+}
+.nav__item:hover { color: var(--ink); transform: translateX(3px); }
+.nav__item[aria-current="true"] { color: var(--ink); font-weight: 500; }
+
+.rail__foot { margin-top: auto; display: flex; flex-direction: column; gap: 16px; }
+.toggles { display: flex; flex-wrap: wrap; gap: 10px; }
+
+.seg {
+  display: inline-flex;
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  padding: 2px;
+  width: fit-content;
+  background: var(--surface);
+}
+.seg__btn {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: .08em;
+  padding: 4px 13px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--ink-mute);
+  cursor: pointer;
+  transition: background .18s ease, color .18s ease;
+}
+.seg__btn[aria-pressed="true"] { background: var(--ink); color: var(--ground); }
+.seg__btn--icon { display: flex; align-items: center; justify-content: center; padding: 5px 11px; }
+.seg__btn--icon svg { display: block; }
+
+.rail__note {
+  font-family: var(--mono);
+  font-size: 10px;
+  line-height: 1.6;
+  color: var(--ink-mute);
+  letter-spacing: .02em;
+}
+
+/* ── main column ── */
+.main { padding: 0 var(--pad) 120px; min-width: 0; }
+
+/* ══ hero ═════════════════════════════════════════════════════
+   Two experiments taking the canvas in turn — a run-and-tumble
+   swim field, then drops spreading and retracting on the
+   contact line below. Both play out in the open space right of
+   the name, so one mask serves both. The deep bottom padding
+   keeps type clear of the lamellae.                           */
+.hero {
+  position: relative;
+  padding: clamp(84px, 13vh, 150px) 0 clamp(122px, 16vh, 164px);
+  overflow: hidden;
+}
+#heroFigure {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  opacity: 1;
+  transition: opacity .62s ease;
+  -webkit-mask-image: linear-gradient(100deg, transparent 24%, rgba(0,0,0,.34) 46%, #000 69%);
+          mask-image: linear-gradient(100deg, transparent 24%, rgba(0,0,0,.34) 46%, #000 69%);
+}
+@media (prefers-reduced-motion: reduce) { #heroFigure { transition: none; } }
+.hero__body { position: relative; }
+.hero__eyebrow {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: .17em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin: 0 0 20px;
+}
+.hero__name {
+  font-family: var(--serif);
+  font-size: clamp(46px, 8.6vw, 98px);
+  font-weight: 400;
+  line-height: .96;
+  letter-spacing: -.035em;
+  margin: 0;
+  text-wrap: balance;
+}
+.hero__name em {
+  font-style: italic;
+  font-weight: 400;
+  color: var(--accent);
+}
+.hero__role {
+  font-size: clamp(16px, 2vw, 19px);
+  color: var(--ink-soft);
+  font-weight: 300;
+  margin: 26px 0 0;
+  max-width: 34ch;
+}
+.hero__affil {
+  font-family: var(--mono);
+  font-size: 11.5px;
+  color: var(--ink-mute);
+  margin: 16px 0 0;
+  letter-spacing: .03em;
+  line-height: 1.7;
+}
+
+/* the contact line the hero sits on, continued down the page */
+.hero__baseline { position: relative; height: 1px; background: var(--rule); }
+
+/* ══ sections ═════════════════════════════════════════════════ */
+.section {
+  padding: clamp(60px, 9vh, 100px) 0 0;
+  scroll-margin-top: 24px;
+}
+.section__head {
+  display: flex;
+  align-items: baseline;
+  gap: 16px;
+  margin-bottom: 34px;
+}
+.section__title {
+  font-family: var(--serif);
+  font-size: clamp(27px, 3.6vw, 37px);
+  font-weight: 500;
+  letter-spacing: -.025em;
+  line-height: 1.1;
+  margin: 0;
+  white-space: nowrap;
+}
+.section__kicker {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: .13em;
+  text-transform: uppercase;
+  color: var(--ink-mute);
+  white-space: nowrap;
+}
+
+/* ── the meniscus rule: flat interface, rising where it meets a wall ── */
+.rule { position: relative; flex: 1; height: 24px; min-width: 84px; }
+.rule__line { position: absolute; left: 0; right: 62px; bottom: 1px; height: 1px; background: var(--rule); }
+.rule__men  { position: absolute; right: 0; bottom: 0; display: block; color: var(--accent); }
+
+/* ── prose ── */
+.prose { max-width: 64ch; }
+.prose p {
+  margin: 0 0 1.15em;
+  color: var(--ink-soft);
+  font-weight: 300;
+  font-size: 16.5px;
+}
+.prose p:last-child { margin-bottom: 0; }
+.prose strong { font-weight: 500; color: var(--ink); }
+.prose em { font-style: italic; }
+
+.facts {
+  margin: 40px 0 0;
+  display: grid;
+  gap: 0;
+  max-width: 70ch;
+  border-top: 1px solid var(--rule-soft);
+}
+.facts__row {
+  display: grid;
+  grid-template-columns: 152px minmax(0, 1fr);
+  gap: 18px;
+  padding: 13px 0;
+  margin: 0;
+  border-bottom: 1px solid var(--rule-soft);
+}
+.facts__k {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: .11em;
+  text-transform: uppercase;
+  color: var(--ink-mute);
+  padding-top: 5px;
+}
+.facts__v { font-size: 15px; color: var(--ink-soft); margin: 0; }
+
+/* ── research cards ───────────────────────────────────────────
+   Each card is a phase resting on its own interface: the top
+   border is the contact line, tinted by the card's accent.   */
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(272px, 1fr));
+  gap: 1px;
+  background: var(--rule-soft);
+  border: 1px solid var(--rule-soft);
+}
+.card {
+  position: relative;
+  background: var(--surface);
+  padding: 30px 26px 26px;
+  display: flex;
+  flex-direction: column;
+  gap: 13px;
+  transition: background .25s ease;
+}
+.card::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0;
+  height: 2px;
+  width: 0;
+  background: var(--card-accent, var(--accent));
+  transition: width .5s cubic-bezier(.2,.7,.3,1);
+}
+.card.lit::before { width: 100%; }
+.card:hover { background: var(--surface-alt); }
+.card__idx {
+  font-family: var(--mono);
+  font-size: 9.5px;
+  letter-spacing: .13em;
+  color: var(--card-accent, var(--accent));
+}
+.card__title {
+  font-family: var(--serif);
+  font-size: 21px;
+  font-weight: 500;
+  line-height: 1.2;
+  margin: 0;
+  letter-spacing: -.015em;
+}
+.card__body {
+  margin: 0;
+  font-size: 14.5px;
+  font-weight: 300;
+  line-height: 1.68;
+  color: var(--ink-soft);
+}
+.card__tags {
+  margin-top: auto;
+  padding-top: 8px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.tag {
+  font-family: var(--mono);
+  font-size: 9.5px;
+  letter-spacing: .05em;
+  padding: 3px 9px;
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  color: var(--ink-mute);
+  white-space: nowrap;
+}
+
+/* ── publications ── */
+.pubblock { margin-bottom: 54px; }
+.pubblock:last-child { margin-bottom: 0; }
+.pubblock__head { display: flex; align-items: baseline; gap: 14px; margin-bottom: 10px; max-width: 84ch; }
+.pubblock__title {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: .15em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin: 0;
+  font-weight: 500;
+  white-space: nowrap;
+}
+.pubblock__count { font-family: var(--mono); font-size: 10px; color: var(--ink-mute); font-variant-numeric: tabular-nums; }
+
+.pubgroup { margin-bottom: 26px; }
+.pubgroup:last-child { margin-bottom: 0; }
+.pubgroup__year {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: .13em;
+  color: var(--ink-mute);
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--rule);
+  margin: 0 0 4px;
+  font-variant-numeric: tabular-nums;
+  max-width: 84ch;
+}
+.pub {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr);
+  gap: 14px;
+  padding: 17px 0;
+  border-bottom: 1px solid var(--rule-soft);
+  max-width: 84ch;
+  transition: background .2s ease;
+}
+.pub__n {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--ink-mute);
+  padding-top: 5px;
+  font-variant-numeric: tabular-nums;
+}
+.pub__title {
+  font-family: var(--serif);
+  font-size: 18px;
+  font-weight: 500;
+  line-height: 1.32;
+  margin: 0 0 6px;
+  letter-spacing: -.008em;
+}
+.pub__authors { font-size: 13.5px; color: var(--ink-soft); font-weight: 300; margin: 0; line-height: 1.6; }
+.pub__authors .me { color: var(--ink); font-weight: 500; }
+.pub__venue { font-family: var(--mono); font-size: 11px; color: var(--ink-mute); margin: 7px 0 0; line-height: 1.6; }
+.pub__venue i { font-style: normal; color: var(--accent); }
+.pub__title a {
+  color: inherit;
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  transition: color .2s ease, border-color .2s ease;
+}
+.pub__title a:hover { color: var(--accent); border-bottom-color: var(--accent); }
+.pub__doi {
+  color: var(--ink-mute);
+  overflow-wrap: anywhere;      /* a DOI is one long unbreakable token */
+  text-decoration: none;
+  border-bottom: 1px solid var(--rule);
+  transition: color .2s ease, border-color .2s ease;
+}
+.pub__doi:hover { color: var(--accent); border-bottom-color: var(--accent); }
+
+/* ── contact ── */
+.contact { display: flex; flex-direction: column; gap: 30px; max-width: 66ch; }
+.contact__lead { font-size: 16.5px; font-weight: 300; color: var(--ink-soft); margin: 0; }
+.links { display: flex; flex-direction: column; gap: 0; border-top: 1px solid var(--rule-soft); }
+.link {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 15px 0;
+  border-bottom: 1px solid var(--rule-soft);
+  text-decoration: none;
+  transition: padding-left .25s cubic-bezier(.2,.7,.3,1);
+}
+.link:hover { padding-left: 10px; }
+.link__k {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: .11em;
+  text-transform: uppercase;
+  color: var(--ink-mute);
+  white-space: nowrap;
+}
+.link__v {
+  font-size: 15px;
+  color: var(--ink);
+  border-bottom: 1px solid transparent;
+  transition: border-color .2s ease, color .2s ease;
+  word-break: break-word;
+  text-align: right;
+}
+.link:hover .link__v { color: var(--accent); border-bottom-color: var(--accent); }
+.link--empty .link__v { color: var(--ink-mute); font-style: italic; }
+
+/* ── footer ── */
+.foot {
+  margin-top: 92px;
+  padding-top: 22px;
+  border-top: 1px solid var(--rule);
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: .07em;
+  color: var(--ink-mute);
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+/* ── mobile ── */
+@media (max-width: 880px) {
+  .shell { grid-template-columns: minmax(0, 1fr); }
+  .rail {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    height: auto;
+    border-right: 0;
+    border-bottom: 1px solid var(--rule);
+    padding: 16px var(--pad) 12px;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    background: var(--ground);
+  }
+  .gauge { order: 3; width: 100%; grid-template-columns: minmax(0, 1fr); gap: 0; }
+  .gauge__tube { display: none; }
+  .nav {
+    flex-direction: row;
+    gap: 20px;
+    overflow-x: auto;
+    padding-bottom: 2px;
+    scrollbar-width: none;
+  }
+  .nav::-webkit-scrollbar { display: none; }
+  .nav__item { padding: 2px 0; white-space: nowrap; font-size: 13.5px; }
+  .nav__item:hover { transform: none; }
+  .nav__item[aria-current="true"] { color: var(--accent); }
+  .rail__foot { margin-top: 0; flex-direction: row; align-items: center; gap: 14px; }
+  .rail__note { display: none; }
+  .section__title { white-space: normal; }
+  .facts__row { grid-template-columns: minmax(0, 1fr); gap: 2px; }
+  .pub { grid-template-columns: minmax(0, 1fr); }
+  .pub__n { display: none; }
+  .link { flex-direction: column; align-items: flex-start; gap: 2px; }
+  .link__v { text-align: left; }
+  .section { scroll-margin-top: 108px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation-duration: .001ms !important; transition-duration: .001ms !important; }
+}
+
+/* entrance */
+.reveal { opacity: 0; transform: translateY(12px); }
+.reveal.in { opacity: 1; transform: none; transition: opacity .7s ease, transform .7s cubic-bezier(.2,.7,.3,1); }
+@media (prefers-reduced-motion: reduce) { .reveal { opacity: 1; transform: none; } }
+</style>
+
+<div class="shell">
+  <aside class="rail">
+    <a class="rail__mark" href="#top">
+      <span class="rail__name" data-bind="name"></span>
+      <span class="rail__sub" data-bind="railsub"></span>
+    </a>
+    <div class="gauge">
+      <div class="gauge__tube" aria-hidden="true">
+        <div class="gauge__fill" id="gaugeFill"><span class="gauge__men"></span></div>
+      </div>
+      <nav class="nav" id="nav" aria-label="Sections"></nav>
+    </div>
+    <div class="rail__foot">
+      <div class="toggles">
+        <div class="seg" role="group" aria-label="Language">
+          <button class="seg__btn" data-lang="ko" type="button">KO</button>
+          <button class="seg__btn" data-lang="en" type="button">EN</button>
+        </div>
+        <div class="seg" role="group" aria-label="Theme">
+          <button class="seg__btn seg__btn--icon" data-theme-set="light" type="button" title="Light" aria-label="Light">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4.1"/><path d="M12 1.8v2.4M12 19.8v2.4M4.4 4.4l1.7 1.7M17.9 17.9l1.7 1.7M1.8 12h2.4M19.8 12h2.4M4.4 19.6l1.7-1.7M17.9 6.1l1.7-1.7"/></svg>
+          </button>
+          <button class="seg__btn seg__btn--icon" data-theme-set="dark" type="button" title="Dark" aria-label="Dark">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M20.6 14.8A8.6 8.6 0 1 1 9.2 3.4a6.9 6.9 0 0 0 11.4 11.4z"/></svg>
+          </button>
+        </div>
+      </div>
+      <p class="rail__note" data-bind="railnote"></p>
+    </div>
+  </aside>
+
+  <main class="main" id="top">
+    <header class="hero">
+      <canvas id="heroFigure" aria-hidden="true"></canvas>
+      <div class="hero__body">
+        <p class="hero__eyebrow" data-bind="eyebrow"></p>
+        <h1 class="hero__name" data-bind="heroName"></h1>
+        <p class="hero__role" data-bind="role"></p>
+        <p class="hero__affil" data-bind="affiliation"></p>
+      </div>
+    </header>
+    <div class="hero__baseline"></div>
+    <div id="sections"></div>
+    <footer class="foot">
+      <span data-bind="footL"></span>
+      <span data-bind="footR"></span>
+    </footer>
+  </main>
+</div>
+
+<script>
+/* 모바일 뷰포트 — 이 파일을 그대로 열거나 GitHub Pages에 올릴 때
+   필요합니다. 이미 있으면 아무것도 하지 않습니다. */
+if (!document.querySelector('meta[name="viewport"]')) {
+  const m = document.createElement("meta");
+  m.name = "viewport";
+  m.content = "width=device-width, initial-scale=1";
+  document.head.appendChild(m);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   SITE — 이 객체 하나만 고치면 페이지 전체가 바뀝니다.
+   모든 텍스트는 { ko: "...", en: "..." } 형태로 두 언어를 함께 씁니다.
+
+   ▸ 섹션 추가하는 법
+     sections 배열에 객체 하나를 넣기만 하면
+     왼쪽 내비게이션과 본문이 자동으로 생깁니다. 순서 = 배열 순서.
+
+       { id: "awards",                        // 고유 id (앵커로 쓰임)
+         nav:   { ko: "수상", en: "Awards" },
+         title: { ko: "수상 및 장학", en: "Awards & Scholarships" },
+         kicker:{ ko: "경희대", en: "Kyung Hee University" },
+         type: "prose",                       // 아래 4종 중 하나
+         body: { ko: ["문단1", "문단2"], en: ["para 1", "para 2"] } }
+
+   ▸ type 4종
+     "prose"   : body(문단 배열) + facts(표, 선택)
+     "cards"   : items[] — 카드 그리드
+     "pubs"    : blocks[] — 논문/특허/발표 목록 (연도별 그룹)
+     "contact" : lead + links[]
+   ═══════════════════════════════════════════════════════════════ */
+
+const SITE = {
+  name:        { ko: "고영수", en: "Young-Su Ko" },
+  heroName:    { ko: "고영수", en: "Young-Su <em>Ko</em>" },
+  railsub:     { ko: "계면역학 · 활성입자 거동", en: "Interfacial mechanics · Active particles" },
+  eyebrow:     { ko: "경희대학교 기계공학과", en: "Dept. of Mechanical Engineering, Kyung Hee University" },
+  role: {
+    ko: "나노, 마이크로 스케일의 계면에서 액적과 입자의 거동을 연구하고, 계면 역학을 활용한 에너지 응용 방안을 모색합니다.",
+    en: "I study the behavior of drops and particles at nano- and microscale interfaces, and explore how interfacial mechanics can be turned into energy applications."
+  },
+  affiliation: {
+    ko: "박사(Ph.D.) · 기계공학과 · 경희대학교",
+    en: "Ph.D. · Dept. of Mechanical Engineering · Kyung Hee University"
+  },
+  railnote:    { ko: "", en: "" },
+  footL:       { ko: "고영수 · 경희대학교 기계공학과", en: "Young-Su Ko · Kyung Hee University" },
+  footR:       { ko: "최종 수정 2026.08", en: "Updated Aug 2026" },
+
+  sections: [
+    /* ── 1. About ────────────────────────────────────────────── */
+    {
+      id: "about",
+      nav:    { ko: "소개", en: "About" },
+      title:  { ko: "소개", en: "About" },
+      kicker: { ko: "약력", en: "Profile" },
+      type: "prose",
+      body: {
+        ko: [
+          "<strong>나노·마이크로 스케일 계면 유체물리</strong>를 연구합니다. 큰 줄기 중 첫 번째는 초소수성 표면 위에서 액적이 어떻게 튀어 오르고, 갈라지고, 미세 액적으로 쪼개지는지를 고속 촬영으로 들여다보는 것이 출발점이었습니다. 이 연구는 나아가 <strong>계면에서 에너지를 끌어내는 연구</strong>로 이어집니다. 초소수성 메쉬로 미세 액적의 크기와 전하량을 조절해 액체–고체 마찰전기 나노발전기의 출력을 높이거나, 멤브레인으로 염분 차이에서 전력을 뽑아내는 연구를 하고 있습니다.",
+          "다른 하나는 <strong>살아 있는 계에서의 활성 입자</strong> 연구입니다. 식물 세포 안의 세포질 유동을 단일 세포 수준에서 측정하고 세포질 유동의 생물학적 의미를 탐구한다던지, 메탄자화균 <em>Methylomicrobium</em>의 개체·집단 운동이 메탄과 산소 농도에 어떻게 반응하는지 추적하는 기초연구를 수행하고 있습니다."
+        ],
+        en: [
+          "I study <strong>nano- and microscale interfacial fluid physics</strong>. The first of the two main threads began with high-speed imaging of what a drop does on a superhydrophobic surface — how it bounces, how it splits, how it breaks into microdroplets. That work extends into <strong>drawing energy out of the interface</strong>: raising the output of liquid–solid triboelectric nanogenerators by controlling microdroplet size and charge with superhydrophobic meshes, and generating power from salinity differences across membranes.",
+          "The other thread is <strong>active particles in living systems</strong>. I measure cytoplasmic streaming inside single plant cells and ask what that streaming means biologically, and I carry out basic research tracking how the individual and collective motion of the methanotroph <em>Methylomicrobium</em> responds to methane and oxygen concentration."
+        ]
+      },
+      facts: [
+        { k: { ko: "연구 관심사", en: "Research interests" },
+          v: { ko: "나노·마이크로 스케일 계면 유체물리 · 계면 유체에서의 에너지 하베스팅 · 생물학적 액티브 매터",
+               en: "Nano/microscale interfacial fluid physics · Energy harvesting in interfacial fluidics · Biological active matter" } },
+        { k: { ko: "학력", en: "Education" },
+          v: { ko: "경희대학교 기계공학과 박사 (2022.03 – 2026.08)<br>경희대학교 석사 (2020.03 – 2022.02)<br>경희대학교 학사 (2014.03 – 2020.02)",
+               en: "Ph.D., Mechanical Engineering, Kyung Hee University (Mar 2022 – Aug 2026)<br>M.S., Kyung Hee University (Mar 2020 – Feb 2022)<br>B.S., Kyung Hee University (Mar 2014 – Feb 2020)" } },
+        { k: { ko: "실험 기법", en: "Methods" },
+          v: { ko: "젖음성 제어 표면 제작 · 고속카메라 액적 충돌 실험 · 마이크로플루이딕 시스템 제작 · 입자추적(PTV)",
+               en: "Wettability-controlled surface fabrication · High-speed drop-impact imaging · Microfluidic system fabrication · Particle tracking (PTV)" } },
+        { k: { ko: "분석 도구", en: "Toolbox" },
+          v: { ko: "Python · 통계검정 · Trackpy · ImageJ",
+               en: "Python · Statistical testing · Trackpy · ImageJ" } }
+      ]
+    },
+
+    /* ── 2. Research ─────────────────────────────────────────── */
+    {
+      id: "research",
+      nav:    { ko: "연구", en: "Research" },
+      title:  { ko: "연구 주제", en: "Research" },
+      kicker: { ko: "세 갈래", en: "Three threads" },
+      type: "cards",
+      items: [
+        {
+          idx: "01 / DROPLET DYNAMICS",
+          title: { ko: "액적 동역학", en: "Droplet Dynamics" },
+          body: {
+            ko: "초소수성 표면에 부딪힌 액적이 무엇을 하는지를 고속 촬영으로 추적합니다. 접촉 시간을 줄여 충돌 중 열전달을 억제하는 문제, 윤활유 함침 표면에 비스듬히 부딪힌 액적이 튀며 회전하는 거동, 곡률이 충돌 힘에 미치는 영향, 그리고 초소수성 마이크로포어와 메쉬를 통과시켜 마이크로 액적을 하나씩 만들어 내는 일까지 이어집니다.",
+            en: "High-speed imaging of what a drop does when it hits a superhydrophobic surface: suppressing heat transfer during impact by shortening contact time, the bounce-and-spin of a drop striking a lubricant-impregnated surface obliquely, how surface curvature changes impact force, and generating microdroplets one at a time by driving drops through superhydrophobic micropores and meshes."
+          },
+          tags: ["Drop impact", "Superhydrophobic", "Contact time", "Microdroplet generation", "Splash"]
+        },
+        {
+          idx: "02 / INTERFACIAL PHENOMENA",
+          title: { ko: "계면 현상과 에너지", en: "Interfacial Phenomena" },
+          body: {
+            ko: "계면을 설계해 마찰과 에너지를 다룹니다. 초소수성 금속산화물 나노구조의 마찰 저감 성능을 정량화하는 일에서 시작해, 미세 액적의 크기와 전하량을 메쉬로 조절해 마찰전기 나노발전기 출력을 높이고, 그래핀 옥사이드 기반 나노유체 멤브레인으로 염분 차이에서 삼투 발전을 끌어냅니다. 다공성 하이드로젤을 이용한 태양광 증발도 같은 계열입니다.",
+            en: "Engineering interfaces to control friction and to harvest energy. It started with quantifying drag reduction on superhydrophobic metal-oxide nanostructures, and now runs through liquid–solid triboelectric nanogenerators whose output is raised by mesh-controlled droplet size and charge, graphene-oxide nanofluidic membranes that generate osmotic power from salinity differences, and highly porous hydrogels for solar water evaporation."
+          },
+          tags: ["Drag reduction", "Triboelectric nanogenerator", "Osmotic power", "Graphene oxide", "Solar evaporation"]
+        },
+        {
+          idx: "03 / ACTIVE MATTER",
+          title: { ko: "액티브 매터", en: "Active Matter" },
+          body: {
+            ko: "스스로 움직이는 계를 정량화합니다. 단일 식물 세포 안의 세포질 유동 속도를 측정해 유전적 차이와 환경 스트레스에 따른 반응을 구분하고, 메탄자화균 <em>Methylomicrobium</em>이 메탄·산소 농도에 따라 개체 및 집단 수준에서 어떻게 움직이는지 추적합니다. 백금 코팅 타원형 야누스 입자의 능동 운동도 같은 틀에서 다룹니다.",
+            en: "Quantifying systems that move on their own. Measuring cytoplasmic streaming velocity inside single plant cells to separate genetic differences from environmental stress responses; tracking how the methanotroph <em>Methylomicrobium</em> moves at both the individual and collective level under varying methane and oxygen concentration; and characterizing the active motion of platinum-coated ellipsoidal Janus particles."
+          },
+          tags: ["Cytoplasmic streaming", "Methylomicrobium", "Collective motion", "Microfluidics"]
+        }
+      ]
+    },
+
+    /* ── 3. Publications ─────────────────────────────────────── */
+    {
+      id: "publications",
+      nav:    { ko: "논문", en: "Publications" },
+      title:  { ko: "논문 및 특허", en: "Publications" },
+      kicker: { ko: "저널 · 특허 · 학회 발표", en: "Journals · Patents · Talks" },
+      type: "pubs",
+      blocks: [
+        {
+          title: { ko: "저널 논문", en: "Journal Articles" },
+          groups: [
+            {
+              year: "2026",
+              items: [
+                { title: { ko: "Microdroplet Generation Using Superhydrophobic Meshes and Its Application in a Liquid–Solid Triboelectric Nanogenerator to Enhance Output Performance", en: "Microdroplet Generation Using Superhydrophobic Meshes and Its Application in a Liquid–Solid Triboelectric Nanogenerator to Enhance Output Performance" },
+                  authors: "<span class=\"me\">Young-Su Ko</span>, Sunmin Jang, Jeonghwan Choi, Sumin Cho, Hyeonsu Baek, Kanghyun Yu, Soban Ali Shah, Dongwhi Choi*, Choongyeop Lee*",
+                  venue: "<i>ACS Applied Materials &amp; Interfaces</i> 18, 21225–21236 (2026)",
+                  doi: "10.1021/acsami.6c00921" }
+              ]
+            },
+            {
+              year: "2025",
+              items: [
+                { title: { ko: "Effect of surface curvature on drop impact forces on curved superhydrophobic surfaces", en: "Effect of surface curvature on drop impact forces on curved superhydrophobic surfaces" },
+                  authors: "Akash Ranjan Pati, Ikroh Yoon, <span class=\"me\">Young-Su Ko</span>, Seungwon Shin, Choongyeop Lee*",
+                  venue: "<i>International Journal of Multiphase Flow</i> 191, 105304 (2025)",
+                  doi: "10.1016/j.ijmultiphaseflow.2025.105304" }
+              ]
+            },
+            {
+              year: "2024",
+              items: [
+                { title: { ko: "A bouncing and rotating drop after oblique impact on lubricant-impregnated surfaces", en: "A bouncing and rotating drop after oblique impact on lubricant-impregnated surfaces" },
+                  authors: "Changwoo Bae, <span class=\"me\">Young-Su Ko</span>, Seungwon Shin, Choongyeop Lee*",
+                  venue: "<i>Physics of Fluids</i> 36, 122015 (2024)",
+                  doi: "10.1063/5.0239361" },
+                { title: { ko: "Facile fabrication of superhydrophobic sub-millimetric cone-shape pillars based on a single UV exposure to control drop impact dynamics", en: "Facile fabrication of superhydrophobic sub-millimetric cone-shape pillars based on a single UV exposure to control drop impact dynamics" },
+                  authors: "<span class=\"me\">Young-Su Ko</span>, Chiwook Ha, Yun Jung Heo, Choongyeop Lee*",
+                  venue: "<i>Journal of Mechanical Science and Technology</i> 38, 4255–4260 (2024)",
+                  doi: "10.1007/s12206-024-0722-8" },
+                { title: { ko: "Highly porous hydrogels for efficient solar water evaporation", en: "Highly porous hydrogels for efficient solar water evaporation" },
+                  authors: "Akash Ranjan Pati, <span class=\"me\">Young-Su Ko</span>, Changwoo Bae, Inhee Choi, Yun Jung Heo, Choongyeop Lee*",
+                  venue: "<i>Soft Matter</i> 20, 4988–4997 (2024)",
+                  doi: "10.1039/d4sm00388h" },
+                { title: { ko: "Dynamics of microdroplet generation via drop impact on a superhydrophobic micropore", en: "Dynamics of microdroplet generation via drop impact on a superhydrophobic micropore" },
+                  authors: "Mohammad Shibli Reza, <span class=\"me\">Young-Su Ko</span>, Byeong Eun Jeon, Progenjit Sen, Choongyeop Lee*",
+                  venue: "<i>Physics of Fluids</i> 36, 052013 (2024)",
+                  doi: "10.1063/5.0207480" },
+                { title: { ko: "Graphene oxide-based nanofluidic system for power generation from salinity difference", en: "Graphene oxide-based nanofluidic system for power generation from salinity difference" },
+                  authors: "<span class=\"me\">Young-Su Ko</span>, Hyeonho Cho, Jeonghoon Han, Youngsuk Nam*, Sunghan Kim*, Choongyeop Lee*",
+                  venue: "<i>Journal of Membrane Science</i> 701, 122722 (2024)",
+                  doi: "10.1016/j.memsci.2024.122722" }
+              ]
+            },
+            {
+              year: "2023",
+              items: [
+                { title: { ko: "Thermally enhanced osmotic power generation from salinity difference", en: "Thermally enhanced osmotic power generation from salinity difference" },
+                  authors: "Jeonghoon Han, <span class=\"me\">Young-Su Ko</span>, Youngsuk Nam*, Choongyeop Lee*",
+                  venue: "<i>Journal of Membrane Science</i> 672, 121451 (2023)",
+                  doi: "10.1016/j.memsci.2023.121451" }
+              ]
+            },
+            {
+              year: "2022",
+              items: [
+                { title: { ko: "Influence of early drop bouncing on heat transfer during drop impact", en: "Influence of early drop bouncing on heat transfer during drop impact" },
+                  authors: "<span class=\"me\">Young-Su Ko</span>, Jeonghwan Kim, Seunggeol Ryu, Jeonghoon Han, Youngsuk Nam, Choongyeop Lee*",
+                  venue: "<i>International Communications in Heat and Mass Transfer</i> 137, 106235 (2022)",
+                  doi: "10.1016/j.icheatmasstransfer.2022.106235" }
+              ]
+            },
+            {
+              year: "2020",
+              items: [
+                { title: { ko: "Quantifying frictional drag reduction properties of superhydrophobic metal oxide nanostructures", en: "Quantifying frictional drag reduction properties of superhydrophobic metal oxide nanostructures" },
+                  authors: "<span class=\"me\">Young Su Ko</span>, Hyeon Jeong Kim, Chi Wook Ha, Choongyeop Lee*",
+                  venue: "<i>Langmuir</i> 36(40), 11809–11816 (2020)",
+                  doi: "10.1021/acs.langmuir.0c01515" }
+              ]
+            }
+          ]
+        },
+        {
+          title: { ko: "등록 특허", en: "Patents" },
+          groups: [
+            {
+              year: "2023",
+              items: [
+                { title: { ko: "Microdroplet printing based on drop impact on superhydrophobic micropore", en: "Microdroplet printing based on drop impact on superhydrophobic micropore" },
+                  authors: "Choongyeop Lee, Yun Jung Heo, <span class=\"me\">Young-Su Ko</span>, Byeong Eun Jeon",
+                  venue: "Korea 10-2023-0039298" },
+                { title: { ko: "Energy harvesting system utilizing microdroplets generated by water penetration through superhydrophobic mesh", en: "Energy harvesting system utilizing microdroplets generated by water penetration through superhydrophobic mesh" },
+                  authors: "Choongyeop Lee, Jeonghwan Choi, <span class=\"me\">Young-Su Ko</span>, Sunmin Jang, Dongwhi Choi",
+                  venue: "Korea 10-2023-0089760" },
+                { title: { ko: "Evaluation method of environmental resistance of plants based on cytoplasmic streaming measurement within a plant cell", en: "Evaluation method of environmental resistance of plants based on cytoplasmic streaming measurement within a plant cell" },
+                  authors: "Choongyeop Lee, Chaeyeong Seo, <span class=\"me\">Young-Su Ko</span>, Youngsuk Nam, Keunhwan Park, Hyun-Ah Lee",
+                  venue: "Korea 10-2023-0156572" }
+              ]
+            }
+          ]
+        },
+        {
+          title: { ko: "학회 발표 — 제1저자", en: "Conference Presentations — First Author" },
+          groups: [
+            {
+              year: "2025",
+              items: [
+                { title: { ko: "Superhydrophobic Mesh-Controlled Microdroplet Size and Charge for Liquid–Solid Triboelectric Nanogeneration", en: "Superhydrophobic Mesh-Controlled Microdroplet Size and Charge for Liquid–Solid Triboelectric Nanogeneration" },
+                  authors: "<span class=\"me\">Young-Su Ko</span>, Sunmin Jang, Jeonghwan Choi, Sumin Cho, Hyeon Soo Baek, Kanghyun Yu, Soban Ali Shah, Dongwhi Choi, Choongyeop Lee*",
+                  venue: "MNS 2025 (Fall) · Korea · Nov 2025" },
+                { title: { ko: "Regulation of Microdroplet Size and Charge Using a Superhydrophobic Mesh for Liquid–Solid Triboelectric Nanogenerator", en: "Regulation of Microdroplet Size and Charge Using a Superhydrophobic Mesh for Liquid–Solid Triboelectric Nanogenerator" },
+                  authors: "<span class=\"me\">Young-Su Ko</span>, Sunmin Jang, Jeonghwan Choi, Sumin Cho, Hyeon Soo Baek, Kanghyun Yu, Soban Ali Shah, Dongwhi Choi, Choongyeop Lee*",
+                  venue: "18th ACFM · Korea · Sep 2025" },
+                { title: { ko: "Effects of Methane and Oxygen Concentrations on <em>Methylomicrobium</em> Dynamics", en: "Effects of Methane and Oxygen Concentrations on <em>Methylomicrobium</em> Dynamics" },
+                  authors: "<span class=\"me\">Young-Su Ko</span>, Seonwoo Kim, Woojun Park, Kanghyun Yu, Seungjae Yu, In Yeub Hwang, Seung Soo Shin, Bum Jun Park, Choongyeop Lee*",
+                  venue: "KSME 2025 (Spring) · Korea · Apr 2025" }
+              ]
+            },
+            {
+              year: "2024",
+              items: [
+                { title: { ko: "Differential Response of Cytoplasmic Streaming of Plant Cells to Genetic Difference and Environmental Stress", en: "Differential Response of Cytoplasmic Streaming of Plant Cells to Genetic Difference and Environmental Stress" },
+                  authors: "<span class=\"me\">Young-Su Ko</span>, Chaeyeong Seo, Soosik Bang, Chihoon Song, Keunhwan Park, Youngsuk Nam, Hyun-Ah Lee, Choongyeop Lee*",
+                  venue: "ICTAM 2024 · Korea · Aug 2024" }
+              ]
+            },
+            {
+              year: "2023",
+              items: [
+                { title: { ko: "Experimental Measurement of Cytoplasmic Streaming Velocity within a Single Plant Cell", en: "Experimental Measurement of Cytoplasmic Streaming Velocity within a Single Plant Cell" },
+                  authors: "<span class=\"me\">Young-Su Ko</span>, Chaeyeong Seo, Soosik Bang, Keunhwan Park, Youngsuk Nam, Hyun-Ah Lee, Choongyeop Lee*",
+                  venue: "APS DFD 2023 · USA · Nov 2023" },
+                { title: { ko: "Controlling Droplet-based Energy Generation by Microdroplet Charge and Size Using Superhydrophobic Meshes", en: "Controlling Droplet-based Energy Generation by Microdroplet Charge and Size Using Superhydrophobic Meshes" },
+                  authors: "<span class=\"me\">Young-Su Ko</span>, Sunmin Jang, Jeonghwan Choi, Sumin Cho, Dongwhi Choi, Choongyeop Lee*",
+                  venue: "AJK 2023 · Japan · Jul 2023" }
+              ]
+            },
+            {
+              year: "2022",
+              items: [
+                { title: { ko: "Single-cell Level Cytoplasmic Streaming Measurement in Plant Cell", en: "Single-cell Level Cytoplasmic Streaming Measurement in Plant Cell" },
+                  authors: "<span class=\"me\">Young-Su Ko</span>, Chaeyeong Seo, Soosik Bang, Youngsuk Nam, Hyun-Ah Lee, Choongyeop Lee*",
+                  venue: "KSME 2022 · Korea · Nov 2022" },
+                { title: { ko: "Optimizing Ion Permeability and Selectivity in Graphene Oxide-based Thin Membranes for Reverse Electrodialysis Power Generation", en: "Optimizing Ion Permeability and Selectivity in Graphene Oxide-based Thin Membranes for Reverse Electrodialysis Power Generation" },
+                  authors: "<span class=\"me\">Young-Su Ko</span>, Hyeonho Cho, Sunghan Kim, Choongyeop Lee*",
+                  venue: "NISE 2022 · Korea · Aug 2022" }
+              ]
+            },
+            {
+              year: "2021 – 2019",
+              items: [
+                { title: { ko: "Power Generation Through Improved Permeability and Ion-selectivity in Graphene Oxide-based Heterogeneous Membranes", en: "Power Generation Through Improved Permeability and Ion-selectivity in Graphene Oxide-based Heterogeneous Membranes" },
+                  authors: "<span class=\"me\">Young-Su Ko</span>, Hyeonho Cho, Sunghan Kim, Choongyeop Lee*",
+                  venue: "23rd KMEMS · Korea · Apr 2021" },
+                { title: { ko: "Reducing Thermal Energy Transfer During Drop Impact via Contact Time Reduction on Mesh-junction Superhydrophobic Surfaces", en: "Reducing Thermal Energy Transfer During Drop Impact via Contact Time Reduction on Mesh-junction Superhydrophobic Surfaces" },
+                  authors: "<span class=\"me\">Young-Su Ko</span>, Jeonghwan Kim, Seungeol Ryu, Youngsuk Nam*, Choongyeop Lee*",
+                  venue: "11th NCFE · Korea · Aug 2020" },
+                { title: { ko: "Drag Reduction on Superhydrophobic Nano Metal Surface", en: "Drag Reduction on Superhydrophobic Nano Metal Surface" },
+                  authors: "<span class=\"me\">Young-Su Ko</span>, Hyeon Jeong Kim, Chi Wook Ha, Choongyeop Lee*",
+                  venue: "11th KSME Fall Conference · Korea · Nov 2019" }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+
+    /* ── 4. Contact ──────────────────────────────────────────── */
+    {
+      id: "contact",
+      nav:    { ko: "연락처", en: "Contact" },
+      title:  { ko: "연락처", en: "Contact" },
+      kicker: { ko: "협업 · 문의", en: "Collaboration & enquiries" },
+      type: "contact",
+      lead: {
+        ko: "공동연구, 계면유체·활성입자·에너지수확 관련 협업, 세미나 초청 모두 환영합니다. 메일이 가장 빠릅니다.",
+        en: "Open to joint research, collaborations on interfacial fluidics, active particles, and energy harvesting, and to seminar invitations. Email reaches me fastest."
+      },
+      links: [
+        { k: { ko: "이메일", en: "Email" }, v: "008dudtn@khu.ac.kr", href: "mailto:008dudtn@khu.ac.kr" },
+        { k: { ko: "구글 스칼라", en: "Google Scholar" }, v: { ko: "scholar.google.co.kr", en: "scholar.google.co.kr" }, href: "https://scholar.google.co.kr/citations?user=SwOKuUAAAAAJ&hl=ko" },
+        { k: { ko: "소속", en: "Affiliation" }, v: { ko: "경희대학교 기계공학과", en: "Dept. of Mechanical Engineering, Kyung Hee University" } },
+        { k: { ko: "ORCID", en: "ORCID" }, v: { ko: "링크 추가 예정", en: "link to be added" }, empty: true },
+        { k: { ko: "깃허브", en: "GitHub" }, v: { ko: "링크 추가 예정", en: "link to be added" }, empty: true }
+      ]
+    }
+  ]
+};
+
+/* ═══ render ══════════════════════════════════════════════════ */
+const $  = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+const t  = (v, lang) => (v && typeof v === "object" && !Array.isArray(v)) ? (v[lang] ?? v.en ?? "") : (v ?? "");
+const REDUCE = window.matchMedia("(prefers-reduced-motion: reduce)");
+
+/* viridis — the colormap these experiments are plotted in */
+const VIRIDIS = [[68,1,84],[59,82,139],[33,145,140],[94,201,98],[253,231,37]];
+function viridis(u) {
+  const x = Math.max(0, Math.min(1, u)) * (VIRIDIS.length - 1);
+  const i = Math.min(Math.floor(x), VIRIDIS.length - 2), f = x - i;
+  const a = VIRIDIS[i], b = VIRIDIS[i + 1];
+  return [Math.round(a[0]+(b[0]-a[0])*f), Math.round(a[1]+(b[1]-a[1])*f), Math.round(a[2]+(b[2]-a[2])*f)];
+}
+
+let lang = "ko";
+
+function el(tag, cls, html) {
+  const n = document.createElement(tag);
+  if (cls) n.className = cls;
+  if (html != null) n.innerHTML = html;
+  return n;
+}
+
+/* the interface: flat, then rising where it meets the wall */
+function meniscusRule() {
+  const w = el("span", "rule");
+  w.innerHTML =
+    '<span class="rule__line"></span>' +
+    '<svg class="rule__men" width="62" height="24" viewBox="0 0 62 24" fill="none" aria-hidden="true">' +
+    '<path d="M0 23 H26 C40 23 46 21.5 51.5 14.5 C55.5 9.4 58 5 62 0" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>';
+  return w;
+}
+
+function renderProse(s) {
+  const out = document.createDocumentFragment();
+  const wrap = el("div", "prose");
+  t(s.body, lang).forEach(p => wrap.appendChild(el("p", null, p)));
+  out.appendChild(wrap);
+  if (s.facts && s.facts.length) {
+    const f = el("dl", "facts");
+    s.facts.forEach(row => {
+      const r = el("div", "facts__row");
+      r.appendChild(el("dt", "facts__k", t(row.k, lang)));
+      r.appendChild(el("dd", "facts__v", t(row.v, lang)));
+      f.appendChild(r);
+    });
+    out.appendChild(f);
+  }
+  return out;
+}
+
+/* the three threads take three stops along the viridis ramp */
+const CARD_ACCENTS = ["var(--accent-deep)", "var(--accent)", "var(--spark)"];
+
+function renderCards(s) {
+  const grid = el("div", "cards");
+  s.items.forEach((it, i) => {
+    const c = el("article", "card");
+    c.style.setProperty("--card-accent", CARD_ACCENTS[i % CARD_ACCENTS.length]);
+    if (it.idx) c.appendChild(el("span", "card__idx", it.idx));
+    c.appendChild(el("h3", "card__title", t(it.title, lang)));
+    c.appendChild(el("p", "card__body", t(it.body, lang)));
+    if (it.tags && it.tags.length) {
+      const tw = el("div", "card__tags");
+      it.tags.forEach(tag => tw.appendChild(el("span", "tag", tag)));
+      c.appendChild(tw);
+    }
+    grid.appendChild(c);
+  });
+  return grid;
+}
+
+function renderPubs(s) {
+  const out = document.createDocumentFragment();
+  const blocks = s.blocks || [{ groups: s.groups || [] }];
+  blocks.forEach(block => {
+    const b = el("section", "pubblock");
+    if (block.title) {
+      const head = el("div", "pubblock__head");
+      head.appendChild(el("h3", "pubblock__title", t(block.title, lang)));
+      head.appendChild(meniscusRule());
+      if (block.count) head.appendChild(el("span", "pubblock__count", t(block.count, lang)));
+      b.appendChild(head);
+    }
+    /* newest carries the highest number, counting down to the first */
+    let n = (block.groups || []).reduce((sum, g) => sum + ((g.items || []).length), 0);
+    (block.groups || []).forEach(g => {
+      const grp = el("div", "pubgroup");
+      if (g.year) grp.appendChild(el("h4", "pubgroup__year", g.year));
+      (g.items || []).forEach(item => {
+        const p = el("article", "pub");
+        p.appendChild(el("span", "pub__n", String(n).padStart(2, "0")));
+        n -= 1;
+        const meta = el("div");
+        /* a DOI turns the title into the link and prints itself in
+           the venue line, where people go to copy it */
+        const head = el("h5", "pub__title");
+        if (item.doi) {
+          const link = el("a", null, t(item.title, lang));
+          link.href = "https://doi.org/" + item.doi;
+          link.target = "_blank";
+          link.rel = "noopener";
+          head.appendChild(link);
+        } else {
+          head.innerHTML = t(item.title, lang);
+        }
+        meta.appendChild(head);
+        if (item.authors) meta.appendChild(el("p", "pub__authors", t(item.authors, lang)));
+        if (item.venue || item.doi) {
+          const venue = el("p", "pub__venue", t(item.venue, lang));
+          if (item.doi) {
+            venue.insertAdjacentHTML("beforeend",
+              ' · <a class="pub__doi" href="https://doi.org/' + item.doi +
+              '" target="_blank" rel="noopener">' + item.doi + '</a>');
+          }
+          meta.appendChild(venue);
+        }
+        p.appendChild(meta);
+        grp.appendChild(p);
+      });
+      b.appendChild(grp);
+    });
+    out.appendChild(b);
+  });
+  return out;
+}
+
+function renderContact(s) {
+  const wrap = el("div", "contact");
+  wrap.appendChild(el("p", "contact__lead", t(s.lead, lang)));
+  const list = el("div", "links");
+  s.links.forEach(l => {
+    const a = el(l.href ? "a" : "div", "link" + (l.empty ? " link--empty" : ""));
+    if (l.href) {
+      a.href = l.href;
+      a.rel = "noopener";
+      if (!l.href.startsWith("mailto:")) a.target = "_blank";
+    }
+    a.appendChild(el("span", "link__k", t(l.k, lang)));
+    a.appendChild(el("span", "link__v", t(l.v, lang)));
+    list.appendChild(a);
+  });
+  wrap.appendChild(list);
+  return wrap;
+}
+
+const RENDERERS = { prose: renderProse, cards: renderCards, pubs: renderPubs, contact: renderContact };
+
+function render() {
+  document.documentElement.lang = lang;
+
+  $$("[data-bind]").forEach(node => {
+    node.innerHTML = t(SITE[node.dataset.bind], lang);
+  });
+
+  const nav = $("#nav");
+  nav.innerHTML = "";
+  SITE.sections.forEach(s => {
+    const a = el("a", "nav__item", t(s.nav, lang));
+    a.href = "#" + s.id;
+    nav.appendChild(a);
+  });
+
+  const host = $("#sections");
+  host.innerHTML = "";
+  SITE.sections.forEach(s => {
+    const sec = el("section", "section reveal");
+    sec.id = s.id;
+    const head = el("div", "section__head");
+    head.appendChild(el("h2", "section__title", t(s.title, lang)));
+    head.appendChild(meniscusRule());
+    if (s.kicker) head.appendChild(el("span", "section__kicker", t(s.kicker, lang)));
+    sec.appendChild(head);
+    const fn = RENDERERS[s.type];
+    if (fn) sec.appendChild(fn(s));
+    host.appendChild(sec);
+  });
+
+  $$("[data-lang]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.lang === lang)));
+  paintThemeButtons();          // re-render must not clear the other toggle
+
+  revealSections();
+  activeIndex = -1;
+  observeSections();
+}
+
+/* ── capillary gauge ──────────────────────────────────────────
+   The tube is divided into one band per section, so the level
+   reads "section 2 of 4" and lands on the active nav item —
+   not on how many pixels of prose happen to sit below you.   */
+const gaugeFill = document.getElementById("gaugeFill");
+let activeIndex = -1;
+function updateGauge() {
+  if (!gaugeFill) return;
+  const n = SITE.sections.length;
+  const p = activeIndex < 0 ? 0 : (activeIndex + 1) / n;
+  gaugeFill.style.height = (p * 100).toFixed(2) + "%";
+}
+function setActive(id) {
+  const i = SITE.sections.findIndex(s => s.id === id);
+  if (i === activeIndex) return;
+  activeIndex = i;
+  $$(".nav__item").forEach(item => item.setAttribute("aria-current", String(item.getAttribute("href") === "#" + id)));
+  updateGauge();
+}
+
+/* ── which section am I in? ───────────────────────────────────
+   Measured directly instead of watching intersections. Two
+   sections can cross the reading line inside a single observer
+   callback, and the callback does not hand them over in
+   document order — so the winner was whichever came last.    */
+function sectionAtReadingLine() {
+  const line = window.innerHeight * 0.3;
+  const doc = document.documentElement;
+  if (window.scrollY + window.innerHeight >= doc.scrollHeight - 2) {
+    return SITE.sections[SITE.sections.length - 1].id;   // bottom of the page: the last one
+  }
+  let current = SITE.sections[0].id;
+  SITE.sections.forEach(s => {
+    const node = document.getElementById(s.id);
+    if (node && node.getBoundingClientRect().top <= line) current = s.id;
+  });
+  return current;
+}
+
+/* A nav click owns the level until its scroll finishes; without
+   the hold, every section the smooth scroll flies past would
+   overwrite the destination on the way there.                */
+let navTarget = null, idleTimer = null, probeY = -1, syncTick = false;
+
+function syncActive() {
+  if (navTarget) {
+    setActive(navTarget);
+    if (sectionAtReadingLine() === navTarget) releaseNav();   // arrived
+    return;
+  }
+  setActive(sectionAtReadingLine());
+}
+function releaseNav() {
+  if (!navTarget) return;
+  navTarget = null;
+  setActive(sectionAtReadingLine());
+}
+
+/* Release only once the page has genuinely stopped moving. A
+   plain "no scroll events lately" test is not enough: a smooth
+   scroll that stutters — a slow frame, a throttled tab — looks
+   identical to arrival, and the level would snap back to
+   wherever the viewport happened to be at the time.          */
+function armRelease() {
+  clearTimeout(idleTimer);
+  probeY = window.scrollY;
+  idleTimer = setTimeout(function settle() {
+    if (window.scrollY !== probeY) {                  // still travelling
+      probeY = window.scrollY;
+      idleTimer = setTimeout(settle, 220);
+      return;
+    }
+    releaseNav();
+  }, 220);
+}
+
+window.addEventListener("scroll", () => {
+  if (!syncTick) {
+    syncTick = true;
+    requestAnimationFrame(() => { syncActive(); syncTick = false; });
+  }
+  if (navTarget) armRelease();
+}, { passive: true });
+window.addEventListener("resize", syncActive);
+/* if the reader takes over mid-flight, drop the hold at once */
+["wheel", "touchstart", "keydown"].forEach(ev =>
+  window.addEventListener(ev, releaseNav, { passive: true }));
+
+function observeSections() { navTarget = null; clearTimeout(idleTimer); syncActive(); }
+
+/* ── in-page navigation ───────────────────────────────────────
+   Handled in JS rather than left to the browser: inside the
+   sandboxed artifact frame a bare #hash jump does nothing.   */
+document.addEventListener("click", e => {
+  const a = e.target.closest('a[href^="#"]');
+  if (!a) return;
+  const id = a.getAttribute("href").slice(1);
+  const target = id ? document.getElementById(id) : null;
+  if (!target) return;
+  e.preventDefault();
+  target.classList.add("in");                       // don't scroll into a faded-out section
+  navTarget = SITE.sections.some(s => s.id === id) ? id : null;   // "#top" is not a section
+  syncActive();
+  armRelease();
+  target.scrollIntoView({ behavior: REDUCE.matches ? "auto" : "smooth", block: "start" });
+});
+
+/* ── reveal ── */
+let revealer;
+function revealSections() {
+  if (revealer) revealer.disconnect();
+  revealer = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (!e.isIntersecting) return;
+      e.target.classList.add("in");
+      $$(".card", e.target).forEach((c, i) => setTimeout(() => c.classList.add("lit"), 160 + i * 130));
+      revealer.unobserve(e.target);
+    });
+  }, { rootMargin: "0px 0px -8% 0px" });
+  $$(".reveal").forEach(n => revealer.observe(n));
+}
+
+/* ── language toggle ── */
+$$("[data-lang]").forEach(b => b.addEventListener("click", () => {
+  lang = b.dataset.lang;
+  render();
+}));
+
+/* ── theme toggle ─────────────────────────────────────────────
+   No stamp on <html> means "follow the viewer"; a click stamps
+   data-theme, which both token overrides are written to obey. */
+const themeMQ = window.matchMedia("(prefers-color-scheme: dark)");
+function currentTheme() {
+  const stamped = document.documentElement.getAttribute("data-theme");
+  if (stamped === "light" || stamped === "dark") return stamped;
+  return themeMQ.matches ? "dark" : "light";
+}
+function paintThemeButtons() {
+  const cur = currentTheme();
+  $$("[data-theme-set]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.themeSet === cur)));
+}
+try {
+  const saved = localStorage.getItem("ysk-theme");
+  if (saved === "light" || saved === "dark") document.documentElement.setAttribute("data-theme", saved);
+} catch (e) { /* storage blocked in a sandboxed frame */ }
+$$("[data-theme-set]").forEach(b => b.addEventListener("click", () => {
+  document.documentElement.setAttribute("data-theme", b.dataset.themeSet);
+  try { localStorage.setItem("ysk-theme", b.dataset.themeSet); } catch (e) {}
+  paintThemeButtons();
+}));
+themeMQ.addEventListener("change", paintThemeButtons);
+paintThemeButtons();
+
+render();
+
+/* ═══ hero figure ═════════════════════════════════════════════
+   Two experiments take the canvas in turn, on a loop, both
+   playing out in the open space to the right of the name.
+
+   1. Run-and-tumble — each swimmer holds a heading through a
+      straight run of exponentially distributed length, then
+      tumbles into a new direction: the motility pattern behind
+      the Methylomicrobium tracking.
+   2. Drop impact — drops fall onto the contact line, spread
+      into a lamella, retract into a column and rebound. Each
+      deforms continuously where it lands; the sites simply run
+      out of phase with one another.
+
+   Trails are stored and redrawn rather than faded in place:
+   fading by alpha leaves 8-bit rounding residue that silts up
+   into a haze after a minute of running.                     */
+(function heroFigure() {
+  const cv = document.getElementById("heroFigure");
+  if (!cv) return;
+  const ctx = cv.getContext("2d");
+
+  const SWIM_MS = 9000, DROP_MS = 9600, FADE = 620;
+
+  let W = 0, H = 0, raf = null, phase = "swim", t0 = 0, swapping = false, swapTimer = null;
+
+  function gauss() {                                   /* Box-Muller */
+    let u = 0, v = 0;
+    while (u === 0) u = Math.random();
+    while (v === 0) v = Math.random();
+    return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+  }
+  function strokeSpan(pts, from, to, rgb, alpha, width) {
+    if (to - from < 2) return;
+    ctx.beginPath();
+    ctx.moveTo(pts[from][0], pts[from][1]);
+    for (let i = from + 1; i < to; i++) ctx.lineTo(pts[i][0], pts[i][1]);
+    ctx.strokeStyle = "rgba(" + rgb + "," + alpha + ")";
+    ctx.lineWidth = width;
+    ctx.stroke();
+  }
+  /* a track drawn in thirds, so the tail falls off */
+  function trail(pts, rgb, width) {
+    const n = pts.length;
+    if (n < 2) return;
+    const a = Math.floor(n / 3), b = Math.floor((n * 2) / 3);
+    strokeSpan(pts, 0, a + 1, rgb, 0.14, width);
+    strokeSpan(pts, a, b + 1, rgb, 0.30, width);
+    strokeSpan(pts, b, n, rgb, 0.54, width);
+  }
+
+  /* ── scene 1: run-and-tumble ──────────────────────────────── */
+  const TRAIL = 230;
+  let parts = [], speed = 1;
+  const runFrames = () => 34 + (-Math.log(1 - Math.random())) * 92;
+
+  function place(p) {
+    p.x = W * (0.14 + 0.92 * Math.random());
+    p.y = H * (0.04 + 0.92 * Math.random());
+    p.th = Math.random() * Math.PI * 2;
+    p.run = runFrames();
+    p.pts = [];
+  }
+  function swimInit() {
+    speed = Math.max(0.95, Math.min(W * 0.0022, 2.1));
+    const n = W < 700 ? 11 : 20;
+    parts = [];
+    for (let i = 0; i < n; i++) {
+      const c = viridis(((i * 0.37) % 1) * 0.9 + 0.06);
+      const p = { rgb: c[0] + "," + c[1] + "," + c[2], w: 1.1 + Math.random() * 0.9, v: speed * (0.78 + Math.random() * 0.45) };
+      place(p);
+      parts.push(p);
+    }
+    const warm = Math.floor(TRAIL * 0.7);
+    parts.forEach(p => { for (let i = 0; i < warm; i++) swimAdvance(p); });
+  }
+  function swimAdvance(p) {
+    p.run -= 1;
+    if (p.run <= 0) {                                  /* tumble */
+      p.th += (Math.random() < 0.5 ? -1 : 1) * (0.7 + Math.random() * 1.9);
+      p.run = runFrames();
+    }
+    p.th += (Math.random() - 0.5) * 0.022;             /* rotational diffusion mid-run */
+    p.x += Math.cos(p.th) * p.v;
+    p.y += Math.sin(p.th) * p.v;
+    const m = 36;
+    if (p.x < -m || p.x > W + m || p.y < -m || p.y > H + m) { place(p); return; }
+    p.pts.push([p.x, p.y]);
+    if (p.pts.length > TRAIL) p.pts.shift();
+  }
+  function swimPaint() {
+    ctx.clearRect(0, 0, W, H);
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    parts.forEach(p => {
+      if (!p.pts.length) return;
+      trail(p.pts, p.rgb, p.w);
+      const head = p.pts[p.pts.length - 1];
+      ctx.beginPath();
+      ctx.arc(head[0], head[1], p.w * 1.45, 0, Math.PI * 2);
+      ctx.fillStyle = "rgba(" + p.rgb + ",.92)";
+      ctx.fill();
+    });
+  }
+
+  /* ── scene 2: drop impact, spreading and retracting ───────
+     Each site holds one drop deforming continuously in place —
+     fall, lamella, retraction, rebound — so nothing jumps. The
+     sites run out of phase with one another, which is what
+     fills the space, rather than marching a single drop along
+     a time axis. The wetted footprint is drawn as it grows and
+     recedes: the contact line itself.                        */
+  const CYCLE = 3500, ACTIVE = 3000;   /* a short gap only, so the sites stay populated */
+  let R = 0, baseY = 0, sites = [];
+
+  function dropInit() {
+    R = Math.max(11, Math.min(W * 0.028, 30));
+    baseY = H;                                         /* the page rule below the hero */
+    const xs = W < 700 ? [0.60, 0.88] : [0.54, 0.72, 0.90];
+    sites = xs.map((f, i) => {
+      const c = viridis(0.14 + 0.72 * (i / Math.max(1, xs.length - 1)));
+      return { x: W * f, rgb: c[0] + "," + c[1] + "," + c[2], off: i * (CYCLE / xs.length) };
+    });
+  }
+
+  /* where a site is in its cycle: 0..1 while a drop is present, -1 between drops */
+  function phaseOf(site, el) {
+    const k = el - site.off;
+    if (k < 0) return -1;
+    const q = k % CYCLE;
+    return q < ACTIVE ? q / ACTIVE : -1;
+  }
+
+  /* the drop outline at phase tau, plus its contact radius */
+  function shape(tau) {
+    const lerp = (a, b, u) => a + (b - a) * u;
+    const pts = [];
+    if (tau < 0.20) {                                  /* free fall, accelerating */
+      const u = tau / 0.20;
+      const cy = lerp(-2.5 * R, baseY - R, u * u);
+      for (let i = 0; i <= 56; i++) {
+        const a = (i / 56) * Math.PI * 2;
+        pts.push([Math.cos(a) * R * 1.02, cy - Math.sin(a) * R * 0.98]);
+      }
+      return { pts: pts, r: 0 };
+    }
+    if (tau < 0.70) {                                  /* spreading, then retracting */
+      let r, hh, p;
+      if (tau < 0.46) {
+        const u = (tau - 0.20) / 0.26, e = 1 - Math.pow(1 - u, 2);
+        r = lerp(0.55 * R, 2.45 * R, e); hh = lerp(1.85 * R, 0.60 * R, e); p = lerp(1.0, 0.48, e);
+      } else {
+        const u = (tau - 0.46) / 0.24, e = u * u;
+        r = lerp(2.45 * R, 0.44 * R, e); hh = lerp(0.60 * R, 2.55 * R, e); p = lerp(0.48, 1.55, e);
+      }
+      for (let i = 0; i <= 72; i++) {
+        const a = (i / 72) * Math.PI;
+        pts.push([Math.cos(a) * r, baseY - hh * Math.pow(Math.sin(a), p)]);
+      }
+      return { pts: pts, r: r };
+    }
+    const u = (tau - 0.70) / 0.30;                     /* rebound, oscillating */
+    const cy = baseY - lerp(1.25 * R, 4.1 * R, 1 - Math.pow(1 - u, 1.8));
+    const osc = Math.sin(u * Math.PI * 2.2) * 0.22;
+    const rx = R * (1 + osc), ry = R * (1 - osc);
+    for (let i = 0; i <= 56; i++) {
+      const a = (i / 56) * Math.PI * 2;
+      pts.push([Math.cos(a) * rx, cy - Math.sin(a) * ry]);
+    }
+    return { pts: pts, r: 0 };
+  }
+
+  function dropPaint(el) {
+    ctx.clearRect(0, 0, W, H);
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    sites.forEach(s => {
+      const tau = phaseOf(s, el);
+      if (tau < 0) return;
+      const sh = shape(tau);
+      const fade = tau < 0.03 ? tau / 0.03 : (tau > 0.9 ? (1 - tau) / 0.1 : 1);
+      if (sh.r > 0) {                                  /* the wetted footprint */
+        ctx.beginPath();
+        ctx.moveTo(s.x - sh.r, baseY - 0.5);
+        ctx.lineTo(s.x + sh.r, baseY - 0.5);
+        ctx.strokeStyle = "rgba(" + s.rgb + "," + (0.7 * fade).toFixed(3) + ")";
+        ctx.lineWidth = 2.4;
+        ctx.stroke();
+      }
+      ctx.beginPath();
+      ctx.moveTo(s.x + sh.pts[0][0], sh.pts[0][1]);
+      for (let i = 1; i < sh.pts.length; i++) ctx.lineTo(s.x + sh.pts[i][0], sh.pts[i][1]);
+      if (sh.r > 0) ctx.lineTo(s.x + sh.pts[0][0], sh.pts[0][1]); else ctx.closePath();
+      ctx.fillStyle = "rgba(" + s.rgb + "," + (0.13 * fade).toFixed(3) + ")";
+      ctx.fill();
+      ctx.strokeStyle = "rgba(" + s.rgb + "," + (0.9 * fade).toFixed(3) + ")";
+      ctx.lineWidth = 1.8;
+      ctx.stroke();
+    });
+  }
+
+  /* ── the loop ─────────────────────────────────────────────── */
+  function startPhase(name) {
+    phase = name;
+    if (name === "swim") swimInit(); else dropInit();
+    t0 = performance.now();
+  }
+
+  function swap() {
+    if (swapping) return;
+    swapping = true;
+    cv.style.opacity = "0";
+    swapTimer = setTimeout(() => {
+      startPhase(phase === "swim" ? "drop" : "swim");
+      if (phase === "drop") dropPaint(0); else swimPaint();
+      cv.style.opacity = "1";
+      swapping = false;
+    }, FADE);
+  }
+
+  function frame(now) {
+    const el = now - t0;
+    if (phase === "swim") {
+      parts.forEach(swimAdvance);
+      swimPaint();
+      if (!swapping && el > SWIM_MS) swap();
+    } else {
+      dropPaint(el);
+      if (!swapping && el > DROP_MS) swap();
+    }
+    raf = requestAnimationFrame(frame);
+  }
+
+  function size() {
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    W = cv.clientWidth; H = cv.clientHeight;
+    if (!W || !H) return;
+    cv.width = Math.round(W * dpr);
+    cv.height = Math.round(H * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    if (raf) { cancelAnimationFrame(raf); raf = null; }
+    clearTimeout(swapTimer);
+    swapping = false;
+    cv.style.opacity = "1";
+    if (REDUCE.matches) {                              /* one still field, no cycling */
+      startPhase("swim");
+      swimPaint();
+      return;
+    }
+    startPhase(phase);
+    raf = requestAnimationFrame(frame);
+  }
+
+  size();
+  let rt;
+  window.addEventListener("resize", () => { clearTimeout(rt); rt = setTimeout(size, 200); });
+
+  /* stop burning frames while the hero is off screen */
+  if ("IntersectionObserver" in window && !REDUCE.matches) {
+    new IntersectionObserver(es => es.forEach(e => {
+      if (e.isIntersecting) {
+        if (!raf) { t0 = performance.now(); raf = requestAnimationFrame(frame); }
+      } else if (raf) {
+        cancelAnimationFrame(raf);
+        raf = null;
+      }
+    }), { rootMargin: "80px" }).observe(cv);
+  }
+})();
+</script>
