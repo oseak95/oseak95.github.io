@@ -6,41 +6,16 @@
 <style>
 /* ══ tokens ═══════════════════════════════════════════════════
    Palette is the viridis colormap — the one these experiments are
-   plotted in. Light lives on bare :root; dark is redefined twice
-   (media query + [data-theme]) so OS setting and toggle both win. */
+   plotted in.
+
+   Theme resolves in three steps: dark sits on bare :root as the
+   fallback, a viewer whose OS asks for light gets light, and an
+   explicit choice stamped on the root beats both. Note the test
+   is "prefers light", not "prefers dark" — a browser reporting
+   no preference at all then lands on dark, as intended.
+   Deciding this in CSS rather than from script means the right
+   theme paints on the very first frame.                       */
 :root {
-  --ground:      #EDF0EE;
-  --surface:     #F7F9F7;
-  --surface-alt: #E3E8E5;
-  --ink:         #131E1D;
-  --ink-soft:    #3A4A48;
-  --ink-mute:    #6A7A78;
-  --rule:        #CBD4D2;
-  --rule-soft:   #DCE3E0;
-  --accent:      #14776F;
-  --accent-deep: #3B2A63;
-  --accent-soft: #D2E4E1;
-  --spark:       #A98C0C;
-  --liquid:      rgba(20, 119, 111, .07);
-}
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --ground:      #07110F;
-    --surface:     #0E1A18;
-    --surface-alt: #16241F;
-    --ink:         #E6EDEA;
-    --ink-soft:    #B2C0BC;
-    --ink-mute:    #798A86;
-    --rule:        #23322D;
-    --rule-soft:   #182722;
-    --accent:      #3FBFAC;
-    --accent-deep: #9B87D8;
-    --accent-soft: #13302B;
-    --spark:       #FDE725;
-    --liquid:      rgba(63, 191, 172, .07);
-  }
-}
-:root[data-theme="dark"] {
   --ground:      #07110F;
   --surface:     #0E1A18;
   --surface-alt: #16241F;
@@ -54,6 +29,40 @@
   --accent-soft: #13302B;
   --spark:       #FDE725;
   --liquid:      rgba(63, 191, 172, .07);
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+  --ground:      #EDF0EE;
+  --surface:     #F7F9F7;
+  --surface-alt: #E3E8E5;
+  --ink:         #131E1D;
+  --ink-soft:    #3A4A48;
+  --ink-mute:    #6A7A78;
+  --rule:        #CBD4D2;
+  --rule-soft:   #DCE3E0;
+  --accent:      #14776F;
+  --accent-deep: #3B2A63;
+  --accent-soft: #D2E4E1;
+  --spark:       #A98C0C;
+  --liquid:      rgba(20, 119, 111, .07);
+  }
+}
+/* an explicit light choice outranks a dark OS; equal specificity,
+   so this must stay after the media block */
+:root[data-theme="light"] {
+  --ground:      #EDF0EE;
+  --surface:     #F7F9F7;
+  --surface-alt: #E3E8E5;
+  --ink:         #131E1D;
+  --ink-soft:    #3A4A48;
+  --ink-mute:    #6A7A78;
+  --rule:        #CBD4D2;
+  --rule-soft:   #DCE3E0;
+  --accent:      #14776F;
+  --accent-deep: #3B2A63;
+  --accent-soft: #D2E4E1;
+  --spark:       #A98C0C;
+  --liquid:      rgba(20, 119, 111, .07);
 }
 
 :root {
@@ -969,7 +978,7 @@ function viridis(u) {
   return [Math.round(a[0]+(b[0]-a[0])*f), Math.round(a[1]+(b[1]-a[1])*f), Math.round(a[2]+(b[2]-a[2])*f)];
 }
 
-let lang = "ko";
+let lang = "en";      /* the page opens in English */
 
 function el(tag, cls, html) {
   const n = document.createElement(tag);
@@ -1270,13 +1279,14 @@ $$("[data-lang]").forEach(b => b.addEventListener("click", () => {
 }));
 
 /* ── theme toggle ─────────────────────────────────────────────
-   No stamp on <html> means "follow the viewer"; a click stamps
-   data-theme, which both token overrides are written to obey. */
-const themeMQ = window.matchMedia("(prefers-color-scheme: dark)");
+   Unstamped, the page follows the OS and falls back to dark when
+   the OS states no preference. A click stamps data-theme and is
+   remembered for the next visit.                               */
+const themeMQ = window.matchMedia("(prefers-color-scheme: light)");
 function currentTheme() {
   const stamped = document.documentElement.getAttribute("data-theme");
   if (stamped === "light" || stamped === "dark") return stamped;
-  return themeMQ.matches ? "dark" : "light";
+  return themeMQ.matches ? "light" : "dark";
 }
 function paintThemeButtons() {
   const cur = currentTheme();
@@ -1286,12 +1296,12 @@ try {
   const saved = localStorage.getItem("ysk-theme");
   if (saved === "light" || saved === "dark") document.documentElement.setAttribute("data-theme", saved);
 } catch (e) { /* storage blocked in a sandboxed frame */ }
+themeMQ.addEventListener("change", paintThemeButtons);
 $$("[data-theme-set]").forEach(b => b.addEventListener("click", () => {
   document.documentElement.setAttribute("data-theme", b.dataset.themeSet);
   try { localStorage.setItem("ysk-theme", b.dataset.themeSet); } catch (e) {}
   paintThemeButtons();
 }));
-themeMQ.addEventListener("change", paintThemeButtons);
 paintThemeButtons();
 
 render();
