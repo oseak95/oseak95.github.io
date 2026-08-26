@@ -257,10 +257,12 @@ a { color: inherit; }
 }
 .hero__name {
   font-family: var(--serif);
-  font-size: clamp(46px, 8.6vw, 98px);
+  /* about 1.3x the section titles at every width — the name leads,
+     it does not shout */
+  font-size: clamp(34px, 4.8vw, 50px);
   font-weight: 400;
-  line-height: .96;
-  letter-spacing: -.035em;
+  line-height: 1.05;
+  letter-spacing: -.02em;
   margin: 0;
   text-wrap: balance;
 }
