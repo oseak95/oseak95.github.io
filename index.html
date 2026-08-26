@@ -1438,43 +1438,92 @@ render();
     return q < ACTIVE ? q / ACTIVE : -1;
   }
 
-  /* the drop outline at phase tau, plus its contact radius */
+  /* ── the drop's shape over one impact ─────────────────────
+     One continuous model instead of three spliced formulas: an
+     ellipse of semi-axes (a, b) whose centre sits h above the
+     surface, clipped wherever it dips below. The contact patch
+     is then just the chord the surface cuts, so it opens from
+     zero on touchdown and closes back to zero on take-off —
+     no jump at either end. Detachment is simply h = b.
+
+     Keyframes below are in units of the drop radius; a cubic
+     Hermite pass runs between them so velocity is continuous
+     too. Shape oscillates prolate↔oblate while airborne, the
+     way a drop rebounding off a superhydrophobic surface does. */
+  const T1 = 0.22;                                     /* first contact */
+  const KEYS = [
+    /* tau      h       a       b   */
+    [ 0.220,  1.000,  1.000,  1.000 ],   /* touchdown: tangent, patch = 0 */
+    [ 0.255,  0.660,  1.480,  0.780 ],
+    [ 0.300,  0.360,  2.080,  0.560 ],
+    [ 0.345,  0.290,  2.320,  0.505 ],   /* maximum spread — the lamella */
+    [ 0.400,  0.340,  2.020,  0.590 ],
+    [ 0.460,  0.560,  1.380,  0.860 ],   /* retracting */
+    [ 0.530,  0.960,  0.820,  1.240 ],
+    [ 0.600,  1.400,  0.560,  1.520 ],   /* drawn up into a column */
+    [ 0.660,  1.660,  0.470,  1.660 ],   /* take-off: h = b, patch = 0 */
+    [ 0.720,  2.100,  0.620,  1.440 ],
+    [ 0.800,  2.660,  0.980,  1.060 ],
+    [ 0.870,  3.060,  1.120,  0.930 ],   /* oblate */
+    [ 0.940,  3.360,  0.940,  1.060 ],
+    [ 1.000,  3.550,  1.010,  0.990 ]
+  ];
+
+  /* cubic Hermite through the keyframes, tangents from neighbours */
+  function keyAt(tau) {
+    const K = KEYS, n = K.length;
+    if (tau <= K[0][0]) return [K[0][1], K[0][2], K[0][3]];
+    if (tau >= K[n - 1][0]) return [K[n - 1][1], K[n - 1][2], K[n - 1][3]];
+    let i = 0;
+    while (i < n - 2 && tau > K[i + 1][0]) i++;
+    const t0 = K[i][0], t1 = K[i + 1][0], dt = t1 - t0;
+    const s = (tau - t0) / dt, s2 = s * s, s3 = s2 * s;
+    const h00 = 2 * s3 - 3 * s2 + 1, h10 = s3 - 2 * s2 + s;
+    const h01 = -2 * s3 + 3 * s2,    h11 = s3 - s2;
+    const out = [];
+    for (let c = 1; c <= 3; c++) {
+      const p0 = K[i][c], p1 = K[i + 1][c];
+      const prev = K[i - 1], next = K[i + 2];
+      const m0 = prev ? (p1 - prev[c]) / (t1 - prev[0]) * dt : (p1 - p0);
+      const m1 = next ? (next[c] - p0) / (next[0] - t0) * dt : (p1 - p0);
+      out.push(h00 * p0 + h10 * m0 + h01 * p1 + h11 * m1);
+    }
+    return out;
+  }
+
+  /* outline at phase tau, plus the half-width of the wetted patch */
   function shape(tau) {
-    const lerp = (a, b, u) => a + (b - a) * u;
+    let h, a, b;
+    if (tau < T1) {                                    /* free fall, accelerating */
+      const u = tau / T1, e = u * u;
+      h = (baseY + 2.8 * R) * (1 - e) + R * e;         /* lands tangent to the surface */
+      a = R; b = R;
+    } else {
+      const k = keyAt(tau);
+      h = k[0] * R; a = k[1] * R; b = k[2] * R;
+    }
+    a = Math.max(a, R * 0.22);
+    b = Math.max(b, R * 0.22);
+
+    const cy = baseY - h;
+    const k = h / b;                                   /* k >= 1 means airborne */
     const pts = [];
-    if (tau < 0.20) {                                  /* free fall, accelerating */
-      const u = tau / 0.20;
-      const cy = lerp(-2.5 * R, baseY - R, u * u);
-      for (let i = 0; i <= 56; i++) {
-        const a = (i / 56) * Math.PI * 2;
-        pts.push([Math.cos(a) * R * 1.02, cy - Math.sin(a) * R * 0.98]);
+    if (k >= 1) {
+      for (let i = 0; i <= 64; i++) {
+        const th = (i / 64) * Math.PI * 2;
+        pts.push([a * Math.cos(th), cy + b * Math.sin(th)]);
       }
       return { pts: pts, r: 0 };
     }
-    if (tau < 0.70) {                                  /* spreading, then retracting */
-      let r, hh, p;
-      if (tau < 0.46) {
-        const u = (tau - 0.20) / 0.26, e = 1 - Math.pow(1 - u, 2);
-        r = lerp(0.55 * R, 2.45 * R, e); hh = lerp(1.85 * R, 0.60 * R, e); p = lerp(1.0, 0.48, e);
-      } else {
-        const u = (tau - 0.46) / 0.24, e = u * u;
-        r = lerp(2.45 * R, 0.44 * R, e); hh = lerp(0.60 * R, 2.55 * R, e); p = lerp(0.48, 1.55, e);
-      }
-      for (let i = 0; i <= 72; i++) {
-        const a = (i / 72) * Math.PI;
-        pts.push([Math.cos(a) * r, baseY - hh * Math.pow(Math.sin(a), p)]);
-      }
-      return { pts: pts, r: r };
+    /* the surface cuts the ellipse at sin(th) = k; walk the arc
+       above it, from the left contact point round to the right */
+    const A = Math.asin(Math.max(-1, Math.min(1, k)));
+    const th1 = Math.PI - A, th2 = 2 * Math.PI + A;
+    for (let i = 0; i <= 76; i++) {
+      const th = th1 + (th2 - th1) * (i / 76);
+      pts.push([a * Math.cos(th), cy + b * Math.sin(th)]);
     }
-    const u = (tau - 0.70) / 0.30;                     /* rebound, oscillating */
-    const cy = baseY - lerp(1.25 * R, 4.1 * R, 1 - Math.pow(1 - u, 1.8));
-    const osc = Math.sin(u * Math.PI * 2.2) * 0.22;
-    const rx = R * (1 + osc), ry = R * (1 - osc);
-    for (let i = 0; i <= 56; i++) {
-      const a = (i / 56) * Math.PI * 2;
-      pts.push([Math.cos(a) * rx, cy - Math.sin(a) * ry]);
-    }
-    return { pts: pts, r: 0 };
+    return { pts: pts, r: a * Math.sqrt(Math.max(0, 1 - k * k)) };
   }
 
   function dropPaint(el) {
@@ -1497,7 +1546,7 @@ render();
       ctx.beginPath();
       ctx.moveTo(s.x + sh.pts[0][0], sh.pts[0][1]);
       for (let i = 1; i < sh.pts.length; i++) ctx.lineTo(s.x + sh.pts[i][0], sh.pts[i][1]);
-      if (sh.r > 0) ctx.lineTo(s.x + sh.pts[0][0], sh.pts[0][1]); else ctx.closePath();
+      ctx.closePath();   /* in contact this closes along the surface */
       ctx.fillStyle = "rgba(" + s.rgb + "," + (0.13 * fade).toFixed(3) + ")";
       ctx.fill();
       ctx.strokeStyle = "rgba(" + s.rgb + "," + (0.9 * fade).toFixed(3) + ")";
