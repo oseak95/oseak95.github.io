@@ -1,4 +1,5 @@
 <title>Young-Su Ko</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@300;400;500;600&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&display=swap">
@@ -655,15 +656,6 @@ a { color: inherit; }
 </div>
 
 <script>
-/* 모바일 뷰포트 — 이 파일을 그대로 열거나 GitHub Pages에 올릴 때
-   필요합니다. 이미 있으면 아무것도 하지 않습니다. */
-if (!document.querySelector('meta[name="viewport"]')) {
-  const m = document.createElement("meta");
-  m.name = "viewport";
-  m.content = "width=device-width, initial-scale=1";
-  document.head.appendChild(m);
-}
-
 /* ═══════════════════════════════════════════════════════════════
    SITE — 이 객체 하나만 고치면 페이지 전체가 바뀝니다.
    모든 텍스트는 { ko: "...", en: "..." } 형태로 두 언어를 함께 씁니다.
@@ -1239,11 +1231,11 @@ function armRelease() {
 window.addEventListener("scroll", () => {
   if (!syncTick) {
     syncTick = true;
-    requestAnimationFrame(() => { syncActive(); syncTick = false; });
+    requestAnimationFrame(() => { syncActive(); revealVisible(); syncTick = false; });
   }
   if (navTarget) armRelease();
 }, { passive: true });
-window.addEventListener("resize", syncActive);
+window.addEventListener("resize", () => { syncActive(); revealVisible(); });
 /* if the reader takes over mid-flight, drop the hold at once */
 ["wheel", "touchstart", "keydown"].forEach(ev =>
   window.addEventListener(ev, releaseNav, { passive: true }));
@@ -1267,19 +1259,29 @@ document.addEventListener("click", e => {
   target.scrollIntoView({ behavior: REDUCE.matches ? "auto" : "smooth", block: "start" });
 });
 
-/* ── reveal ── */
-let revealer;
+/* ── reveal ───────────────────────────────────────────────────
+   Sections start at opacity 0, so whatever decides to show them
+   had better be reliable. This used to wait on an
+   IntersectionObserver: if its first callback was late or never
+   arrived, the whole page sat blank. Now visibility is measured
+   directly — at render, on every scroll frame, on resize, and
+   once more after layout settles — so content can never stay
+   hidden while it is on screen.                                */
+function reveal(sec) {
+  if (sec.classList.contains("in")) return;
+  sec.classList.add("in");
+  $$(".card", sec).forEach((c, i) => setTimeout(() => c.classList.add("lit"), 160 + i * 130));
+}
+function revealVisible() {
+  $$(".reveal").forEach(sec => {
+    if (sec.classList.contains("in")) return;
+    if (sec.getBoundingClientRect().top < window.innerHeight * 0.92) reveal(sec);
+  });
+}
 function revealSections() {
-  if (revealer) revealer.disconnect();
-  revealer = new IntersectionObserver(entries => {
-    entries.forEach(e => {
-      if (!e.isIntersecting) return;
-      e.target.classList.add("in");
-      $$(".card", e.target).forEach((c, i) => setTimeout(() => c.classList.add("lit"), 160 + i * 130));
-      revealer.unobserve(e.target);
-    });
-  }, { rootMargin: "0px 0px -8% 0px" });
-  $$(".reveal").forEach(n => revealer.observe(n));
+  revealVisible();
+  setTimeout(revealVisible, 350);      /* webfonts can still be shifting heights */
+  setTimeout(revealVisible, 1200);
 }
 
 /* ── language toggle ── */
